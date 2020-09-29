@@ -137,7 +137,7 @@ node('jenkins-slave') {
     stage("Perform Asnible and kubernetes code evaluation"){
         sh( script: """
             echo "#### Perform ansible linting ###"
-            docker run --rm -v $(pwd):/data cytopia/ansible-lint elk_stack.yml
+            docker run --rm -v \$(pwd):/data cytopia/ansible-lint elk_stack.yml
             echo "#### Perform kubeval to check validity####"
             kubeval /tmp/*/final*.yml
             echo "#### Perform polaris scan to check any missing setting #####"
