@@ -65,7 +65,7 @@ def get_pod_name(service){
 }
 
 def elasticsearch_testing(){
-    statefulset_status("statefulsets","elasticsearch","3")
+    statefulset_status("statefulsets","elasticsearch")
     sh "kubectl cp test_data/elasticsearch/elastic_test_data elasticsearch-0:/tmp/elastic_test_data -n elk"
     sh 'kubectl exec elasticsearch-0 -n elk -- curl -s -H \"Content-Type: application/x-ndjson\" -XPOST localhost:9200/_bulk --data-binary \"@/tmp/elastic_test_data\"; echo > /tmp/output_data'
     try{
@@ -86,7 +86,7 @@ def elasticsearch_testing(){
 }
 
 def logstash_testing(){
-    pod_readiness("deployment","logstash","2")
+    pod_readiness("logstash")
     pod_name = get_pod_name("logstash")
     try{
         sh (script: """
@@ -101,7 +101,7 @@ def logstash_testing(){
 }
 
 def kibana_testing(){
-    pod_readiness("deployment","kibana","1")
+    pod_readiness("kibana")
     pod_name = get_pod_name("kibana")
     try{
         sh(script: """
@@ -116,7 +116,7 @@ def kibana_testing(){
 }
 
 def filebeat_testing(){
-    pod_readiness("daemonset","filebeat","1")
+    pod_readiness("filebeat")
     pod_name = get_pod_name("filebeat")
     try{
         sh(script: """
@@ -175,30 +175,30 @@ node('jenkins-slave') {
 
         stage("Deploy and test elasticsearch") {
             sh "ansible-playbook elasticsearch.yml -i inventories/stage"
-            sleep(120)
+            sleep(30)
             elasticsearch_testing()
         }
 
         stage("Deploy and test logstash") {
             sh "ansible-playbook logstash.yml -i inventories/stage"
-            sleep(120)
+            sleep(30)
             logstash_testing()
         }
         stage("Deploy and test filebeat") {
             sh "ansible-playbook filebeat.yml -i inventories/stage"
-            sleep(120)
+            sleep(30)
             filebeat_testing()
         }
         stage("Deploy and test kibana") {
             sh "ansible-playbook kibana.yml -i inventories/stage"
-            sleep(120)
+            sleep(30)
             kibana_testing()
         }
         stage('Load data and test') {
             sh "kubectl run loggenerator --restart=Never --image chentex/random-logger:latest 0 1 10000"
             sh "kubectl run loggenerator1 --restart=Never --image chentex/random-logger:latest 0 1 10000"
             sh "##### Testing all components after loading some data #####"
-            sleep(120)
+            sleep(30)
             elasticsearch_testing()
             logstash_testing()
             filebeat_testing()
