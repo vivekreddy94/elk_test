@@ -8,20 +8,20 @@ def print_debug_output(service){
         )
 }
 
-def daemon_readiness(type,service,total_pods){
+def pod_readiness(service){
     boolean success = false
     counter = 0
     while (!success) {
         try{
             if(counter<30){
-                ready_pods = sh(returnStdout: true, script: """kubectl get ${type} -n elk -l app=${service} | grep ${service} | awk \'{ print \$4 }\'""").trim()
-                if(ready_pods==total_pods){
+                ready_pods = sh(returnStdout: true, script: """kubectl get pod --sort-by=.status.startTime -n elk -l app=logstash | tail -n 1 | awk \'{print \$2}\'| cut -d \'/\' -f1""").trim()
+                if(ready_pods=='1'){
                     success = true
                 }
                 else{
                     counter = counter + 1
                     sleep(30)
-                }                
+                }
             }
             else{
                 throw new Exception("Taking too long")
@@ -33,13 +33,13 @@ def daemon_readiness(type,service,total_pods){
     }
 }
 
-def deployment_status(type,service,total_pods) {
+def statefulset_status(service,total_pods) {
     boolean success = false
     counter = 0
     while (!success) {
         try{
             if(counter<30){
-                ready_pods = sh(returnStdout: true, script: """kubectl get ${type} -n elk -l app=${service} | grep ${service} | awk \'{ print \$2 }\' | cut -d\'/\' -f 1""").trim()
+                ready_pods = sh(returnStdout: true, script: """kubectl get sts -n elk -l app=${service} | grep ${service} | awk \'{ print \$2 }\' | cut -d\'/\' -f 1""").trim()
                 println(ready_pods)
                 if(ready_pods==total_pods){
                     success = true
@@ -47,7 +47,7 @@ def deployment_status(type,service,total_pods) {
                 else{
                     counter = counter + 1
                     sleep(30)
-                }                
+                }
             }
             else{
                 throw new Exception("Taking too long")
@@ -61,13 +61,11 @@ def deployment_status(type,service,total_pods) {
 
 
 def get_pod_name(service){
-    pods = sh(returnStdout: true, script: """kubectl get pods -n elk -l app=${service} --field-selector=status.phase==Running| grep ${service} | awk \'{print \$1}\'""").trim()
-    pods_list = pods.split('\n')
-    return pods_list[0]
+    return sh(returnStdout: true, script: """kubectl get pod --sort-by=.status.startTime -n elk -l app=${service} | tail -n 1 | cut -d \' \' -f1""").trim()
 }
 
 def elasticsearch_testing(){
-    deployment_status("statefulsets","elasticsearch","3")
+    statefulset_status("statefulsets","elasticsearch","3")
     sh "kubectl cp test_data/elasticsearch/elastic_test_data elasticsearch-0:/tmp/elastic_test_data -n elk"
     sh 'kubectl exec elasticsearch-0 -n elk -- curl -s -H \"Content-Type: application/x-ndjson\" -XPOST localhost:9200/_bulk --data-binary \"@/tmp/elastic_test_data\"; echo > /tmp/output_data'
     try{
@@ -88,7 +86,7 @@ def elasticsearch_testing(){
 }
 
 def logstash_testing(){
-    deployment_status("deployment","logstash","2")
+    pod_readiness("deployment","logstash","2")
     pod_name = get_pod_name("logstash")
     try{
         sh (script: """
@@ -103,12 +101,12 @@ def logstash_testing(){
 }
 
 def kibana_testing(){
-    deployment_status("deployment","kibana","1")
+    pod_readiness("deployment","kibana","1")
     pod_name = get_pod_name("kibana")
     try{
         sh(script: """
             echo "#### Testing Kibana port #####"
-            kubectl exec ${pod_name} -n elk -- curl http://localhost:5601/       
+            kubectl exec ${pod_name} -n elk -- curl http://localhost:5601/
             """
         )
     }
@@ -118,7 +116,7 @@ def kibana_testing(){
 }
 
 def filebeat_testing(){
-    daemon_readiness("daemonset","filebeat","1")
+    pod_readiness("daemonset","filebeat","1")
     pod_name = get_pod_name("filebeat")
     try{
         sh(script: """
@@ -133,7 +131,7 @@ def filebeat_testing(){
 }
 node('jenkins-slave') {
     try {
-        stage('Preparation') { 
+        stage('Preparation') {
             git 'https://github.com/vivekreddy94/elk_test.git'
         }
         stage("Test node") {
@@ -215,7 +213,7 @@ node('jenkins-slave') {
         }
         stage("Deploy to prod") {
             sh "ansible-playbook elk_stack.yml -i inventories/production"
-        } */        
+        } */
     }
     catch (e) {
         throw e
@@ -224,4 +222,5 @@ node('jenkins-slave') {
         sh 'rm -rf ~/.kube/config'
     }
 }
+
 
