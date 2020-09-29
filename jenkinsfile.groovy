@@ -14,7 +14,7 @@ def pod_readiness(service){
     while (!success) {
         try{
             if(counter<30){
-                ready_pods = sh(returnStdout: true, script: """kubectl get pod --sort-by=.status.startTime -n elk -l app=\${service} | tail -n 1 | awk \'{print \$2}\'| cut -d \'/\' -f1""").trim()
+                ready_pods = sh(returnStdout: true, script: """kubectl get pods --sort-by=.status.startTime -n elk -l app=${service} | tail -n 1 | awk \'{print \$2}\'| cut -d \'/\' -f1""").trim()
                 if(ready_pods=='1'){
                     success = true
                 }
