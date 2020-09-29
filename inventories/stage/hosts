@@ -1,0 +1,5 @@
+[all:children]
+kubernetes-node
+
+[kubernetes-node]
+localhost ansible_python_interpreter=/usr/bin/python

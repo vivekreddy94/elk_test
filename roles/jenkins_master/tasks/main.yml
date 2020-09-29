@@ -1,0 +1,56 @@
+---
+- name: Create temporary build directory
+  tempfile:
+    state: directory
+    suffix: build
+  register: build_path
+  tags: image
+
+- name: Copy build Dockerfile
+  copy:
+    src: "{{ item }}"
+    dest: "{{ build_path.path }}"
+    mode: 0777
+  with_items:
+    - Dockerfile
+    - plugins.txt
+    - supervisord.conf
+  tags: image
+
+  #- name: Log into DockerHub
+  #  docker_login:
+  #    username: "{{ docker_login_username }}"
+  #    password: "{{ docker_login_password }}"
+
+- name: Build task image and Pushed to local registry
+  docker_image:
+    name: "{{ jenkins_docker_image_name }}"
+    build:
+      dockerfile: Dockerfile
+      pull: yes
+      path: "{{ build_path.path }}"
+      rm: yes
+    tag: "{{ jenkins_docker_image_tag }}"
+    push: yes
+    source: build
+    force_source: yes
+  tags: image
+
+- name: Create namespace for jenkins deployment
+  k8s:
+    name: "{{ jenkins_namespace }}"
+    state: present
+    api_version: v1
+    kind: Namespace
+    validate_certs: no
+    kubeconfig: "{{ kubeconfig_path }}"
+
+- name: deploy jenkins on kubernetes
+  k8s:
+    state: "{{ action }}"
+    namespace: "{{ jenkins_namespace }}"
+    definition: "{{ lookup('template', '../templates/jenkins-deployment.yaml') }}"
+    #    validate:
+    #  fail_on_error: yes
+    # strict: yes
+    kubeconfig: "{{ kubeconfig_path }}"

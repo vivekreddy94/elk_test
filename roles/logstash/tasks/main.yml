@@ -1,0 +1,37 @@
+---
+- name: Create Service Account
+  k8s:
+    state: "{{ install_action | default('present') }}"
+    definition:
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: "{{ logstash.app }}"
+        namespace: "{{ namespace }}"
+        labels:
+          app: "{{ logstash.app }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+
+- name: Create cluster role binding
+  k8s:
+    state: "{{ install_action | default('present') }}"
+    definition: "{{ lookup('template', 'logstash-role-binding.yml.j2') }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+
+- name: Create config map for logstash configuration file
+  k8s:
+    state: "{{ install_action | default('present') }}"
+    definition: "{{ lookup('template', 'logstash-config-map.yml.j2') }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+
+- name: Create deployment for logstash
+  k8s:
+    state: "{{ install_action | default('present') }}"
+    definition: "{{ lookup('template', 'logstash-deployment.yml.j2') }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+
+- name: Create service for logstash
+  k8s:
+    state: "{{ install_action | default('present') }}"
+    definition: "{{ lookup('template', 'logstash-svc.yml.j2') }}"
+    kubeconfig: "{{ kubeconfig_path }}"

@@ -1,0 +1,20 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ logstash.service }}
+  namespace: {{ namespace }}
+  labels:
+    app: {{ logstash.app }}
+spec:
+  selector:
+    app: {{ logstash.app }}
+  ports:
+  - protocol: TCP
+    port: 5044
+    targetPort: 5044
+    name: logstash
+  - protocol: TCP
+    port: 9600
+    name: api
+    targetPort: 9600
+  type: ClusterIP

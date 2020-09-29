@@ -1,0 +1,24 @@
+input {
+  beats {
+    port => 5044
+    add_field => { "environment" => "{{ logstash.environment }}" "project" => "{{ logstash.project }}" "demo" => "workedagain" }
+  }
+}
+filter {
+  if [message] =~ /^\{.*\}$/ {
+    json {
+      source => "message"
+    }
+  }
+  if [ClientHost] {
+    geoip {
+      source => "ClientHost"
+    }
+  }
+}
+output {
+    elasticsearch {
+        hosts => [ "{{ elasticsearch.service_name }}:{{ elasticsearch.httpport }}" ]
+    }
+}
+

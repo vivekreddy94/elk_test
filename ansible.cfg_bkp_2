@@ -1,0 +1,12 @@
+[defaults]
+inventory=inventories/stage
+retry_files_enabled=False
+vault_password_file = ./.vaultpass
+#vault_identity_list = shared@/opt/ansible/.shared_vault_pass
+callback_whitelist = profile_tasks
+deprecation_warnings=False
+#interpreter_python=auto_legacy_silent
+interpreter_python=auto_silent
+
+[ssh_connection]
+pipelining=True

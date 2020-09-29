@@ -1,0 +1,13 @@
+[
+  {
+    "_index": "loading_data",
+    "_type": "_doc",
+    "_id": "1",
+    "_score": 1,
+    "_source": {
+      "company": "some_company",
+      "name": "vivek",
+      "email": "xyz.com"
+    }
+  }
+]

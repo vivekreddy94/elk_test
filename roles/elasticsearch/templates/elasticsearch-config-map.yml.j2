@@ -1,0 +1,9 @@
+kind: ConfigMap
+metadata:
+  name: elastic-config
+  namespace: {{ namespace }}
+  labels:
+    app: {{ elasticsearch.app }}
+data:
+  elasticsearch.yml: |-
+    {{ lookup('template', 'elasticsearch-config.yml.j2') | indent(4) }}

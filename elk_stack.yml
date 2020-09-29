@@ -1,0 +1,12 @@
+---
+- name: Import elasticsearch playbook
+  import_playbook: elasticsearch.yml
+
+- name: Import logstash playbook
+  import_playbook: logstash.yml
+
+- name: Import filebeat playbook
+  import_playbook: filebeat.yml
+
+- name: Import kibana playbook
+  import_playbook: kibana.yml

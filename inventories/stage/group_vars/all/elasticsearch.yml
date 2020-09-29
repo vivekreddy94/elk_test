@@ -1,0 +1,22 @@
+elasticsearch:
+  app: elasticsearch
+  service_name: elasticsearch-service
+  replicas: 3
+  image: docker.elastic.co/elasticsearch/elasticsearch
+  tag: 7.9.1
+  httpport: 9200
+  transportport: 9300
+  memoryrequest: 2Gi
+  memorylimit: 2Gi
+  cpurequest: 500m
+  cpulimit: 500m
+  cluster_name: elasticsearch-cluster
+  java_opts: "-Xms512m -Xmx512m"
+  storage_class: elasticsearch-storage
+  storage_size: 2Gi
+  storage_claim: 2Gi
+
+elasticsearch_pv:
+  - { name: 'elastic-pv0', path: '/mnt/elastic/pv0' }
+  - { name: 'elastic-pv1', path: '/mnt/elastic/pv1' }
+  - { name: 'elastic-pv2', path: '/mnt/elastic/pv2' }

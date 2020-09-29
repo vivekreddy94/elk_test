@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ elasticsearch.app }}
+  namespace: {{ namespace }}
+  annotations:
+    configmap.reloader.stakater.com/reload: "elastic-config"
+  labels:
+    app: {{ elasticsearch.app }}
+spec:
+  serviceName: {{ elasticsearch.service_name }}
+  # NOTE: This is number of nodes that we want to run
+  # you may update this
+  replicas: {{ elasticsearch.replicas }}
+  selector:
+    matchLabels:
+      app: {{ elasticsearch.app }}
+  template:
+    metadata:
+      labels:
+        app: {{ elasticsearch.app }}
+    spec:
+      serviceAccountName: {{ elasticsearch.app }}
+      terminationGracePeriodSeconds: 300
+      initContainers:
+      - name: volume-permission
+        image: busybox:latest
+        imagePullPolicy: Always
+        command:
+        - sh
+        - -c
+        - chown -R 1000:1000 /usr/share/elasticsearch/data
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+      - name: increase-vm-max-map-count
+        image: alpine:latest
+        imagePullPolicy: Always
+        command: ["/sbin/sysctl", "-w", "vm.max_map_count=262144"]
+        securityContext:
+          privileged: true
+      containers:
+      - name: {{ elasticsearch.app }}
+        image: {{ elasticsearch.image }}:{{ elasticsearch.tag }}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: {{ elasticsearch.httpport }}
+          name: http
+        - containerPort: {{ elasticsearch.transportport }}
+          name: tcp
+        resources:
+          requests:
+            memory: {{ elasticsearch.memoryrequest }}
+            cpu: {{ elasticsearch.cpurequest }}
+          limits:
+            memory: {{ elasticsearch.memorylimit }}
+            cpu: {{ elasticsearch.cpulimit }}
+        env:
+          - name: CLUSTER_NAME
+            value: {{ elasticsearch.cluster_name }}
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: ES_JAVA_OPTS
+            value: {{ elasticsearch.java_opts }}
+        livenessProbe:
+          httpGet:
+            path: /_cluster/health
+            port: http
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /_cluster/health
+            port: http
+          periodSeconds: 30
+        startupProbe:
+          httpGet:
+            path: /_cluster/health
+            port: http
+          failureThreshold: 30
+          periodSeconds: 20
+        volumeMounts:
+        - name: data
+          mountPath: /usr/share/elasticsearch/data
+        - name: config
+          mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+          subPath: elasticsearch.yml
+      volumes:
+        - name: config
+          configMap:
+            name: elastic-config
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+        - ReadWriteMany
+      storageClassName: {{ elasticsearch.storage_class }}
+      resources:
+        requests:
+          storage: {{ elasticsearch.storage_claim }}

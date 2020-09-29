@@ -1,0 +1,85 @@
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: create temporary directories for each component
+      file:
+        path: "/tmp/{{ item }}"
+        state: absent
+      with_items:
+        - elasticsearch
+        - logstash
+        - kibana
+        - filebeat
+    - name: create temporary directories for each component
+      file:
+        path: "/tmp/{{ item }}"
+        state: directory
+      with_items:
+        - elasticsearch
+        - logstash
+        - kibana
+        - filebeat
+
+    - name: copy elasticsearch files
+      template:
+        src: "roles/elasticsearch/templates/{{ item }}.j2"
+        dest: "/tmp/elasticsearch/{{item}}"
+        mode: 0666
+      with_items:
+        - elasticsearch-role-binding.yml
+        - elasticsearch-svc.yml
+        - elasticsearch-statefulset.yml
+
+    - name: Merge elasticsearch files
+      assemble:
+        src: /tmp/elasticsearch
+        dest: /tmp/elasticsearch/final-elastic.yml
+        delimiter: '---'
+    
+    - name: copy logstash files
+      template:
+        src: "roles/logstash/templates/{{ item }}.j2"
+        dest: "/tmp/logstash/{{item}}"
+        mode: 0666
+      with_items:
+        - logstash-config-map.yml
+        - logstash-deployment.yml
+        - logstash-svc.yml
+
+    - name: Merge logstash files
+      assemble:
+        src: /tmp/logstash
+        dest: /tmp/logstash/final-logstash.yml
+        delimiter: '---'
+
+    - name: Copy filebeat files
+      template:
+        src: "roles/filebeat/templates/{{ item }}.j2"
+        dest: "/tmp/filebeat/{{item}}"
+        mode: 0666
+      with_items:
+        - filebeat-config-map.yml
+        - filebeat-daemon.yml
+        - filebeat-role-binding.yml
+
+    - name: Merge filebeat files
+      assemble:
+        src: /tmp/filebeat
+        dest: /tmp/filebeat/final-filebeat.yml
+        delimiter: '---'
+
+    - name: Copy Kibana files
+      template:
+        src: "roles/kibana/templates/{{ item }}.j2"
+        dest: "/tmp/kibana/{{item}}"
+        mode: 0666
+      with_items:
+        - kibana-config-map.yml
+        - kibana-deployment.yml
+        - kibana-svc.yml
+
+    - name: Merge kibana files
+      assemble:
+        src: /tmp/kibana
+        dest: /tmp/kibana/final-kibana.yml
+        delimiter: '---'

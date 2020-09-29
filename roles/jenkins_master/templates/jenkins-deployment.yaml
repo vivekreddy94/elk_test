@@ -1,0 +1,220 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jenkins
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: jenkins
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["create","delete","get","list","patch","update","watch"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create","delete","get","list","patch","update","watch"]
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get","list","watch"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create","delete","get","list","patch","update"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["create","delete","get","list","patch","update"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["create","delete","get","list","patch","update"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["create","delete","get","list","patch","update"]
+- apiGroups: [""]
+  resources: ["ingresses"]
+  verbs: ["create","delete","get","list","patch","update"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: jenkins
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: jenkins
+subjects:
+- kind: ServiceAccount
+  name: jenkins
+  namespace: "{{ jenkins_namespace }}"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins
+  labels:
+    app: jenkins
+data:
+  jenkins.yaml: |-
+    jenkins:
+      systemMessage: "This is demo jenkins instance\n\n"
+      securityRealm:
+        local:
+          allowsSignup: false
+          users:
+            - id: "admin"
+              password: "{{ adminuser_password }}"
+      authorizationStrategy: loggedInUsersCanDoAnything
+    credentials:
+      system:
+        domainCredentials:
+          - credentials:
+              - string:
+                  scope: GLOBAL
+                  id: "github-token"
+                  secret: "{{ github_repo_token }}"
+                  description: "Github token to access repos"
+              - file:
+                  scope: GLOBAL
+                  id: "kubeconfig"
+                  fileName: "kubeconfig"
+                  secretBytes: "{{ kubeconfig_file }}"
+
+    unclassified:
+      githubpluginconfig:
+        configs:
+          - name: "Github config"
+            apiUrl: "https://api.github.com/"
+            credentialsId: "github-token"
+            manageHooks: true
+
+    jobs:
+      - script: >
+          pipelineJob('pipeline') {
+              definition {
+                  cpsScm {
+                      scriptPath 'Jenkinsfile'
+                      scm {
+                        git {
+                            remote { url 'https://github.com/mkrzyzanowski/blog-001.git' }
+                            branch '*/docker-for-mac'
+                            extensions {}
+                        }
+                      }
+                  }
+              }
+          }
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jenkins-local-volume
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 4Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "{{ jenkins_persistent_home }}"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jenkins-claim-local
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 4Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+  annotations:
+    configmap.reloader.stakater.com/reload: "jenkins"
+  labels:
+    app: jenkins
+spec:
+  selector:
+    matchLabels:
+      app: jenkins
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      serviceAccountName: jenkins
+      containers:
+      - name: jenkins
+        image: "{{jenkins_docker_image_name}}:{{jenkins_docker_image_tag}}"
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: JAVA_OPTS
+          value: -Xmx2048m -Dhudson.slaves.NodeProvisioner.MARGIN=50 -Dhudson.slaves.NodeProvisioner.MARGIN0=0.85
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 50000
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /var/jenkins_home
+          name: jenkins
+        - mountPath: /var/run/docker.sock
+          name: docker-sock-volume
+        - mountPath: /var/jenkins_home/jenkins.yaml
+          name: config-file
+      restartPolicy: Always
+      securityContext:
+        runAsUser: 0
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: jenkins
+        persistentVolumeClaim:
+          claimName: jenkins-claim-local
+      - name: docker-sock-volume
+        hostPath:
+          path: /var/run/docker.sock
+          type: File
+      - name: config-file
+        configMap:
+          defaultMode: 0600
+          name: jenkins
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins
+  labels:
+    app: jenkins
+spec:
+  type: NodePort
+  ports:
+    - name: slave
+      port: 50000
+      protocol: TCP
+    - name: ui
+      port: 8080
+      targetPort: 8080
+    - name: http
+      port: 80
+      tragetPort: 8080
+  selector:
+    app: jenkins
+

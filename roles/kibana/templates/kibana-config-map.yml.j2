@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kibana-config
+  namespace: {{ namespace }}
+  labels:
+    app: {{ kibana.app }}
+data:
+  kibana.yml: |-
+    server.name: {{ kibana.app }}
+    server.host: "0"
+    server.port: {{ kibana.port }}
+    elasticsearch.hosts: [ "http://{{ elasticsearch.service_name }}:{{ elasticsearch.httpport }}" ]
+    kibana.index: "logstash"

@@ -1,0 +1,34 @@
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ elasticsearch.app }}
+  namespace: {{ namespace }}
+  labels:
+    app: {{ elasticsearch.app }}
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - "services"
+  - "namespaces"
+  - "endpoints"
+  verbs:
+  - "get"
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: {{ namespace }}
+  name: {{ elasticsearch.app }}
+  labels:
+    app: {{ elasticsearch.app }}
+subjects:
+- kind: ServiceAccount
+  name: {{ elasticsearch.app }}
+  namespace: {{ namespace }}
+  apiGroup: ""
+roleRef:
+  kind: ClusterRole
+  name: {{ elasticsearch.app }}
+  apiGroup: ""

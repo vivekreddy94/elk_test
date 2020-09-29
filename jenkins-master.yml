@@ -1,0 +1,5 @@
+- hosts: kubernetes-node
+  become: true
+  become_method: sudo
+  roles:
+    - jenkins_master

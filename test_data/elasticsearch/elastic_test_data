@@ -1,0 +1,2 @@
+{ "index" : { "_index" : "loading_data", "_type" : "_doc", "_id" : "1" } }
+{ "company" : "some_company", "name" : "vivek", "email" : "xyz.com" }

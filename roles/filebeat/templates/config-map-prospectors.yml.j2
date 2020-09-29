@@ -1,0 +1,9 @@
+ind: ConfigMap
+metadata:
+  name: filebeat-prospectors
+  namespace: {{ namespace }}
+  labels:
+    app: {{ filebeat.app }}
+data:
+  kubernetes.yml: |-
+    {{ lookup('file', 'kubernetes-prospectors.yml') | indent(4) }}

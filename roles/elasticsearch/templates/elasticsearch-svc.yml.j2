@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ elasticsearch.service_name }}
+  namespace: {{ namespace }}
+  labels:
+    app: {{ elasticsearch.app }}
+spec:
+  selector:
+    app: {{ elasticsearch.app }}
+  clusterIP: None
+  ports:
+  - port: {{ elasticsearch.httpport }}
+    name: ui
+  - port: {{ elasticsearch.transportport }}
+    name: node-to-node

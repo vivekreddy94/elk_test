@@ -1,0 +1,12 @@
+logstash:
+  app: logstash
+  service: logstash-service
+  replicas: 2
+  image: docker.elastic.co/logstash/logstash
+  tag: 7.9.1
+  memoryrequest: 1Gi
+  memorylimit: 1Gi
+  cpurequest: 300m
+  cpulimit: 500m
+  environment: stage
+  project: company-project-1

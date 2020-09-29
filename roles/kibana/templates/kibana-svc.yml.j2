@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ kibana.app }}
+  namespace: {{ namespace }}
+  labels:
+    app: {{ kibana.app }}
+spec:
+  type: NodePort
+  ports:
+  - port: {{ kibana.port }}
+    protocol: TCP
+    targetPort: ui
+    nodePort: {{ kibana.nodeport }}
+  selector:
+    app: {{ kibana.app }}
+

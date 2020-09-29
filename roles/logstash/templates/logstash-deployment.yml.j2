@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ logstash.app }}
+  namespace: {{ namespace }}
+  annotations:
+    configmap.reloader.stakater.com/reload: "logstash-config"
+  labels:
+    app: {{ logstash.app }}
+spec:
+  serviceAccountName: {{ logstash.app }}
+  replicas: {{ logstash.replicas }}
+  selector:
+    matchLabels:
+      app: {{ logstash.app }}
+  template:
+    metadata:
+      labels:
+        app: {{ logstash.app }}
+    spec:
+      containers:
+      - name: {{ logstash.app }}
+        image: {{ logstash.image }}:{{ logstash.tag }}
+        ports:
+        - containerPort: 5044
+          name: logstash
+        - containerPort: 9600
+          name: api
+        resources:
+          requests:
+            memory: {{ logstash.memoryrequest }}
+            cpu: {{ logstash.cpurequest }}
+          limits:
+            memory: {{ logstash.memorylimit }}
+            cpu: {{ logstash.cpulimit }}
+        livenessProbe:
+          httpGet:
+            port: api
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            port: api
+          periodSeconds: 30
+        startupProbe:
+          httpGet:
+            port: api
+          failureThreshold: 30
+          periodSeconds: 20 
+        volumeMounts:
+          - name: config
+            mountPath: /usr/share/logstash/config
+          - name: logstash-pipeline
+            mountPath: /usr/share/logstash/pipeline
+      volumes:
+      - name: config
+        configMap:
+          name: logstash-config
+          items:
+            - key: logstash.yml
+              path: logstash.yml
+      - name: logstash-pipeline
+        configMap:
+          name: logstash-config
+          items:
+            - key: logstash.conf
+              path: logstash.conf

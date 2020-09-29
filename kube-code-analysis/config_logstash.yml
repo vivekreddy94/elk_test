@@ -1,0 +1,18 @@
+checks:
+  cpuRequestsMissing: warning
+  cpuLimitsMissing: warning
+  memoryRequestsMissing: warning
+  memoryLimitsMissing: warning
+  tagNotSpecified: danger
+  pullPolicyNotAlways: danger
+  readinessProbeMissing: warning
+  livenessProbeMissing: warning
+  hostNetworkSet: warning
+  hostPortSet: warning
+  hostIPCSet: danger
+  hostPIDSet: danger
+  privilegeEscalationAllowed: danger
+  runAsPrivileged: danger
+  dangerousCapabilities: danger
+  insecureCapabilities: warning
+

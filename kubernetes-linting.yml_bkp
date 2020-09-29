@@ -1,0 +1,48 @@
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: test elasticsearch
+      template:
+        src: "roles/elasticsearch/templates/{{ item }}.j2"
+        dest: "/tmp/{{item}}"
+        mode: 0666
+      with_items:
+        - elasticsearch-config-map.yml
+        - elasticsearch-role-binding.yml
+        - elasticsearch-svc.yml
+        - elasticsearch-statefulset.yml
+
+    - name: test logstash
+      template:
+        src: "roles/logstash/templates/{{ item }}.j2"
+        dest: "/tmp/{{item}}"
+        mode: 0666
+      with_items:
+        - logstash-config-map.yml
+        - logstash-deployment.yml
+        - logstash-role-binding.yml
+        - logstash-svc.yml
+
+    - name: test filebeat
+      template:
+        src: "roles/filebeat/templates/{{ item }}.j2"
+        dest: "/tmp/{{item}}"
+        mode: 0666
+      with_items:
+        - filebeat-config-map.yml
+        - filebeat-daemon.yml
+        - filebeat-role-binding.yml
+
+    - name: test kibana
+      template:
+        src: "roles/kibana/templates/{{ item }}.j2"
+        dest: "/tmp/{{item}}"
+        mode: 0666
+      with_items:
+        - kibana-config-map.yml
+        - kibana-deployment.yml
+        - kibana-svc.yml
+
+
+
+

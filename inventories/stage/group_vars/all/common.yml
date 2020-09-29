@@ -1,0 +1,2 @@
+namespace: elk
+kubeconfig_path: ~/.kube/config

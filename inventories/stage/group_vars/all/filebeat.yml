@@ -1,0 +1,9 @@
+filebeat:
+  app: filebeat
+  memorylimit: 200Mi
+  memoryrequest: 200Mi
+  cpulimit: 100m
+  cpurequest: 100m
+  datapath: /mnt/filebeat/data
+  image: elastic/filebeat
+  tag: 7.9.1

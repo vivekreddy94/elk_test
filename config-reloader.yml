@@ -1,0 +1,9 @@
+---
+- hosts: kubernetes-node
+  tasks:
+    - name: Apply reloader of daemon/deploy/stateful etc on config and secret change
+      k8s:
+        state: present
+        definition: "{{ lookup('file','files/reloader.yml') }}"
+        namespace: default
+        kubeconfig: "{{ kubeconfig_path }}"

@@ -1,0 +1,18 @@
+cluster:
+  name: ${CLUSTER_NAME}
+  initial_master_nodes:
+    - {{ elasticsearch.app }}-0
+node:
+  name: ${NODE_NAME}
+transport.port: {{ elasticsearch.transportport }}
+http.port: {{ elasticsearch.httpport }}
+bootstrap:
+  memory_lock: ${MEMORY_LOCK:false}
+discovery:
+  seed_hosts:
+    - {{ elasticsearch.app }}-0.{{ elasticsearch.service_name }}.{{ namespace }}.svc.cluster.local
+    - {{ elasticsearch.app }}-1.{{ elasticsearch.service_name }}.{{ namespace }}.svc.cluster.local
+    - {{ elasticsearch.app }}-2.{{ elasticsearch.service_name }}.{{ namespace }}.svc.cluster.local
+network:
+  publish_host: ${NODE_NAME}.{{ elasticsearch.service_name }}.{{ namespace }}.svc.cluster.local
+  bind_host: 0.0.0.0
