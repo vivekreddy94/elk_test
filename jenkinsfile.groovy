@@ -15,7 +15,6 @@ def daemon_readiness(type,service,total_pods){
         try{
             if(counter<30){
                 ready_pods = sh(returnStdout: true, script: """kubectl get ${type} -n elk -l app=${service} | grep ${service} | awk \'{ print \$4 }\'""").trim()
-                println(ready_pods)
                 if(ready_pods==total_pods){
                     success = true
                 }
@@ -178,19 +177,23 @@ node('jenkins-slave') {
 
         stage("Deploy and test elasticsearch") {
             sh "ansible-playbook elasticsearch.yml -i inventories/stage"
+            sleep(120)
             elasticsearch_testing()
         }
 
         stage("Deploy and test logstash") {
             sh "ansible-playbook logstash.yml -i inventories/stage"
+            sleep(120)
             logstash_testing()
         }
         stage("Deploy and test filebeat") {
             sh "ansible-playbook filebeat.yml -i inventories/stage"
+            sleep(120)
             filebeat_testing()
         }
         stage("Deploy and test kibana") {
             sh "ansible-playbook kibana.yml -i inventories/stage"
+            sleep(120)
             kibana_testing()
         }
         stage('Load data and test') {
