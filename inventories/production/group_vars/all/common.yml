@@ -1,0 +1,2 @@
+namespace: elkstack
+kubeconfig_path: ~/.kube/config

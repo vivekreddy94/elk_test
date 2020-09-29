@@ -1,0 +1,11 @@
+kibana:
+  app: kibana
+  port: 5601
+  replicas: 1
+  memoryrequest: 1Gi
+  memorylimit: 1Gi
+  cpurequest: 300m
+  cpulimit: 500m
+  image: docker.elastic.co/kibana/kibana
+  tag: 7.9.1
+  nodeport: 31338

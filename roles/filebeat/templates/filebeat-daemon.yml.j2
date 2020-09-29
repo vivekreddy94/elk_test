@@ -24,6 +24,7 @@ spec:
       containers:
       - name: filebeat
         image: {{ filebeat.image }}:{{ filebeat.tag }}
+        imagePullPolicy: Always
         args: [
           "-c", "/etc/filebeat.yml",
           "-e",

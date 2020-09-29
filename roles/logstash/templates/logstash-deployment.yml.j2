@@ -21,6 +21,7 @@ spec:
       containers:
       - name: {{ logstash.app }}
         image: {{ logstash.image }}:{{ logstash.tag }}
+        imagePullPolicy: Always
         ports:
         - containerPort: 5044
           name: logstash

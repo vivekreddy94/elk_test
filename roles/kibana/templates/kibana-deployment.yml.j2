@@ -20,6 +20,7 @@ spec:
       containers:
       - name: {{ kibana.app }}
         image: {{ kibana.image }}:{{ kibana.tag }}
+        imagePullPolicy: Always
         resources:
           # need more cpu upon initialization, therefore burstable class
           limits:
