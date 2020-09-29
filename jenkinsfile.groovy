@@ -195,15 +195,15 @@ node('jenkins-slave') {
             kibana_testing()
         }
         stage('Load data and test') {
-            sh "kubectl run loggenerator --restart=Never --image chentex/random-logger:latest 0 1 10000"
-            sh "kubectl run loggenerator1 --restart=Never --image chentex/random-logger:latest 0 1 10000"
-            sh "##### Testing all components after loading some data #####"
-            sleep(30)
+            sh "kubectl run loggenerator-1 -n default --restart=Never --image chentex/random-logger:latest 0 1 10000"
+            sh "kubectl run loggenerator-2 -n default --restart=Never --image chentex/random-logger:latest 0 1 10000"
+            sleep(120)
+            sh "kubectl delete pods --field-selector=status.phase==Succeeded -n default"
+            echo "##### Testing all components after loading some data #####"
             elasticsearch_testing()
             logstash_testing()
             filebeat_testing()
             kibana_testing()
-            sh "kubectl delete pod \$(kubectl get pods | grep Completed | awk \'{print \$1}\')"
         }
     /*
         stage('cleanup stage') {
