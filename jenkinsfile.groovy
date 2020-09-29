@@ -14,7 +14,7 @@ def pod_readiness(service){
     while (!success) {
         try{
             if(counter<30){
-                ready_pods = sh(returnStdout: true, script: """kubectl get pod --sort-by=.status.startTime -n elk -l app=logstash | tail -n 1 | awk \'{print \$2}\'| cut -d \'/\' -f1""").trim()
+                ready_pods = sh(returnStdout: true, script: """kubectl get pod --sort-by=.status.startTime -n elk -l app=\${service} | tail -n 1 | awk \'{print \$2}\'| cut -d \'/\' -f1""").trim()
                 if(ready_pods=='1'){
                     success = true
                 }
@@ -65,7 +65,7 @@ def get_pod_name(service){
 }
 
 def elasticsearch_testing(){
-    statefulset_status("statefulsets","elasticsearch")
+    statefulset_status("elasticsearch","3")
     sh "kubectl cp test_data/elasticsearch/elastic_test_data elasticsearch-0:/tmp/elastic_test_data -n elk"
     sh 'kubectl exec elasticsearch-0 -n elk -- curl -s -H \"Content-Type: application/x-ndjson\" -XPOST localhost:9200/_bulk --data-binary \"@/tmp/elastic_test_data\"; echo > /tmp/output_data'
     try{
