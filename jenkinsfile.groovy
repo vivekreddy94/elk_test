@@ -111,6 +111,7 @@ def logstash_testing(){
         }
         catch(Exception e){
             print_debug_output("logstash")
+            throw e
         }
 }
 

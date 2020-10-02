@@ -9,4 +9,3 @@
         namespace: default
         kubeconfig: "{{ kubeconfig_path }}"
 
-    - name: 'Copy query script'
