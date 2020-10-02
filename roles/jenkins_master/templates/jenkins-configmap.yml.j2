@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ jenkins.app }}
+  namespace: {{ jenkins.namespace }}
+  labels:
+    app: {{ jenkins.app }}
+data:
+  jenkins.yaml: |-
+    {{ lookup('template', 'jenkins-config.yml.j2') | indent(4) }}

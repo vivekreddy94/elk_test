@@ -14,13 +14,13 @@
   with_items:
     - Dockerfile
     - plugins.txt
-    - supervisord.conf
   tags: image
 
 - name: Log into DockerHub
   docker_login:
     username: "{{ docker_login_username }}"
     password: "{{ docker_login_password }}"
+  tags: image
 
 - name: Build task image and Pushed to local registry
   docker_image:
@@ -38,16 +38,51 @@
 
 - name: Create namespace for jenkins deployment
   k8s:
-    name: "{{ jenkins_namespace }}"
-    state: present
+    name: "{{ jenkins.namespace }}"
+    state: "{{ install_action | default('present') }}"
     api_version: v1
     kind: Namespace
-    validate_certs: no
     kubeconfig: "{{ kubeconfig_path }}"
 
-- name: deploy jenkins on kubernetes
+- name: Create Service Account
   k8s:
-    state: "{{ action }}"
-    namespace: "{{ jenkins_namespace }}"
-    definition: "{{ lookup('template', '../templates/jenkins-deployment.yaml') }}"
+    state: "{{ install_action | default('present') }}"
+    definition:
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: "{{ jenkins.app }}"
+        namespace: "{{ jenkins.namespace }}"
+        labels:
+          app: "{{ jenkins.app }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+
+- name: Create persistent volume and claims for jenkins
+  k8s:
+    state: "{{ install_action | default('present') }}"
+    definition: "{{ lookup('template', 'jenkins-pv-pvc.yml.j2') }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+
+- name: Create role binding for jenkins
+  k8s:
+    state: "{{ install_action | default('present') }}"
+    definition: "{{ lookup('template', 'jenkins-role-binding.yml.j2') }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+
+- name: Create configmap for jenkins
+  k8s:
+    state: "{{ install_action | default('present') }}"
+    definition: "{{ lookup('template', 'jenkins-configmap.yml.j2') }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+
+- name: Create deployment for jenkins
+  k8s:
+    state: "{{ install_action | default('present') }}"
+    definition: "{{ lookup('template', 'jenkins-deployment.yml.j2') }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+
+- name: Create service for jenkins
+  k8s:
+    state: "{{ install_action | default('present') }}"
+    definition: "{{ lookup('template', 'jenkins-svc.yml.j2') }}"
     kubeconfig: "{{ kubeconfig_path }}"

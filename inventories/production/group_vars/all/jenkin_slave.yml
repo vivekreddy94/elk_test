@@ -1,0 +1,2 @@
+jenkins_slave_docker_image_name: "{{ docker_login_username }}/jenkins-slave"
+jenkins_slave_docker_image_tag: 1.0

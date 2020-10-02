@@ -9,7 +9,7 @@ COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 RUN /usr/local/bin/install-plugins.sh < /usr/share/jenkins/ref/plugins.txt
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
     python get-pip.py && \
-     pip install ansible openshift
+     pip install ansible openshift kubernetes-validate
 
 RUN apt-get update && \
     apt-get install -y wget libltdl7 apt-transport-https ca-certificates curl gnupg2 software-properties-common && \
@@ -24,6 +24,4 @@ RUN apt-get install -y openssh-server && /etc/init.d/ssh start &&\
     ssh-keygen -b 2048 -t rsa -f ~/.ssh/id_rsa -q -N "" && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
 
-ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-ENTRYPOINT ["/usr/bin/supervisord"]

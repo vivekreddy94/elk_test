@@ -1,3 +1,0 @@
-- hosts: kubernetes-node
-  roles:
-    - jenkins_master

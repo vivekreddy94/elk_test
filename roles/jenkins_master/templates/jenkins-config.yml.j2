@@ -1,0 +1,77 @@
+jenkins:
+  systemMessage: "This is jenkins instance\n\n"
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "{{ adminuser_password }}"
+  authorizationStrategy: loggedInUsersCanDoAnything
+
+  clouds:
+    - kubernetes:
+        name: "Kubernetes"
+        serverUrl: "https://10.0.0.5:16443"
+        jenkinsUrl: "http://{{ jenkins.service_name }}:8080/"
+        templates:
+          - name: "jenkins-slave"
+            label: "jenkins-slave"
+            volumes:
+              - hostPathVolume:
+                  mountPath: "/var/run/docker.sock"
+                  hostPath: "/var/run/docker.sock"
+            containers:
+              - name: "jnlp"
+                image: "{{ jenkins_slave_docker_image_name }}:{{ jenkins_slave_docker_image_tag }}"
+                privileged: true
+                alwaysPullImage: true
+                command: ""
+                args: ""
+                workingDir: "/home/jenkins/agent"
+                ttyEnabled: true
+
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - string:
+              scope: GLOBAL
+              id: "github-token"
+              secret: "{{ github_repo_token }}"
+              description: "Github token to access repos"
+          - file:
+              scope: GLOBAL
+              id: "kubeconfig"
+              fileName: "kubeconfig"
+              secretBytes: "{{ kubeconfig_file }}"
+
+
+unclassified:
+  githubpluginconfig:
+    configs:
+      - name: "Github config"
+        apiUrl: "https://api.github.com/"
+        credentialsId: "github-token"
+        manageHooks: true
+
+jobs:
+  - script: >
+      pipelineJob('ELK_CI_CD_pipeline') {
+          triggers {
+            githubPush()
+          }
+          definition {
+              cpsScm {
+                  scriptPath 'jenkinsfile.groovy'
+                  scm {
+                    git {
+                        remote { url 'https://github.com/vivekreddy94/elk_test.git' }
+                        branch '*/master'
+                        extensions {}
+                    }
+                  }
+              }
+          }
+      }
+
+

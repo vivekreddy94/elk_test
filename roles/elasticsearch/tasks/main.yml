@@ -1,6 +1,6 @@
 - name: Create storage class for elastic
   k8s:
-    state: "{{ install_action | default('present') }}"
+    state: present
     definition:
       apiVersion: storage.k8s.io/v1
       kind: StorageClass

@@ -46,7 +46,7 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: jenkins
-  namespace: "{{ jenkins_namespace }}"
+  namespace: "{{ jenkins.namespace }}"
 
 ---
 apiVersion: v1

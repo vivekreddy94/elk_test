@@ -46,7 +46,7 @@ spec:
         livenessProbe:
           exec:
             command: ["filebeat", "test", "output", "-c", "/etc/filebeat.yml"]
-          periodSeconds: 29
+          periodSeconds: 30
         startupProbe:
           exec:
             command: ["filebeat", "test", "output", "-c", "/etc/filebeat.yml"]

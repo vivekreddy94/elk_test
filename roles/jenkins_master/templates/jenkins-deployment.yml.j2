@@ -1,0 +1,63 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ jenkins.app }}
+  namespace: {{ jenkins.namespace }}
+  annotations:
+    configmap.reloader.stakater.com/reload: "jenkins"
+  labels:
+    app: {{ jenkins.app }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ jenkins.app }}
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: {{ jenkins.app }}
+    spec:
+      serviceAccountName: jenkins
+      containers:
+      - name: {{ jenkins.app }}
+        image: {{ jenkins_docker_image_name }}:{{ jenkins_docker_image_tag }}
+        imagePullPolicy: Always
+        env:
+        - name: JAVA_OPTS
+          value: {{ jenkins.java_opts }}
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        - containerPort: 50000
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /var/jenkins_home
+          name: jenkins
+        - mountPath: /var/run/docker.sock
+          name: docker-sock-volume
+        - mountPath: /var/jenkins_home/jenkins.yaml
+          name: config-file
+      restartPolicy: Always
+      securityContext:
+        runAsUser: 0
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: jenkins
+        persistentVolumeClaim:
+          claimName: jenkins-claim-local
+      - name: docker-sock-volume
+        hostPath:
+          path: /var/run/docker.sock
+          type: File
+      - name: config-file
+        configMap:
+          defaultMode: 0600
+          name: jenkins
+
+

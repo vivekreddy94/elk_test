@@ -1,0 +1,4 @@
+- hosts: kubernetes-node
+  roles:
+    - jenkins_master
+    - jenkins_slave

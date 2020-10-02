@@ -40,7 +40,7 @@ def statefulset_status(service,total_pods) {
         try{
             if(counter<30){
                 ready_pods = sh(returnStdout: true, script: """kubectl get sts -n elk -l app=${service} | grep ${service} | awk \'{ print \$2 }\' | cut -d\'/\' -f 1""").trim()
-                println(ready_pods)
+                sleep(30)
                 if(ready_pods==total_pods){
                     success = true
                 }
@@ -96,7 +96,8 @@ def logstash_testing(){
                 kubectl exec ${pod_name} -n elk -- rm -f /tmp/output.log
                 kubectl cp test_data/logstash/logstash_test_data ${pod_name}:/tmp/logstash_test_data -n elk
                 kubectl exec ${pod_name} -n elk -- curl -H \"content-type: application/json\" -XPUT \'http://127.0.0.1:8080/twitter/tweet/1\' -d \"@/tmp/logstash_test_data\"
-                kubectl exec ${pod_name} -n elk -- cat /tmp/output.log
+                echo "#### Check if output log is created #####"
+                kubectl exec ${pod_name} -n elk -- ls -l /tmp/output.log
                 """
             )
         }

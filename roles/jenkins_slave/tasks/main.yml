@@ -1,0 +1,38 @@
+---
+- name: Create temporary build directory
+  tempfile:
+    state: directory
+    suffix: build
+  register: build_path
+  tags: image
+
+- name: Copy build Dockerfile
+  copy:
+    src: "{{ item }}"
+    dest: "{{ build_path.path }}"
+    mode: 0777
+  with_items:
+    - Dockerfile
+    - kubeval
+    - polaris
+  tags: image
+
+- name: Log into DockerHub
+  docker_login:
+    username: "{{ docker_login_username }}"
+    password: "{{ docker_login_password }}"
+  tags: image
+
+- name: Build task image and Pushed to local registry
+  docker_image:
+    name: "{{ jenkins_slave_docker_image_name }}"
+    build:
+      dockerfile: Dockerfile
+      pull: yes
+      path: "{{ build_path.path }}"
+      rm: yes
+    tag: "{{ jenkins_slave_docker_image_tag }}"
+    push: yes
+    source: build
+    force_source: yes
+  tags: image
