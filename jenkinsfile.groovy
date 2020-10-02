@@ -101,6 +101,8 @@ def logstash_testing(){
                 """
             )
             fileContent = sh(returnStdout: true, script:"kubectl exec ${pod_name} -n elk -- cat /tmp/output.log").trim()
+            println(fileContent)
+            println(fileContent.length())
             if (fileContent.length>0){
                 println("logs are ingested to output file")
             }
