@@ -1,3 +1,0 @@
-FROM cytopia/ansible-lint
-COPY ../ /data/
-
