@@ -143,10 +143,10 @@ def data_loading_test(){
         int received_hits = sh(returnStdout: true, script: """
         kubectl exec elasticsearch-0 -n elk -- curl -X GET \"elasticsearch-service:9200/logstash_index/_search?pretty\" -H \'Content-Type: application/json\' -d\' \
         { \
-          "track_total_hits": 10000000, \
-          "query": { \
-            "term": { \
-              "kubernetes.labels.app": "random-log-app-${BUILD_NUMBER}" \
+          \"track_total_hits\": 10000000, \
+          \"query\": { \
+            \"term\": { \
+              \"kubernetes.labels.app\": \"random-log-app-${BUILD_NUMBER}\" \
             } \
           } \
         }\' | jq \".hits.total.value\"
