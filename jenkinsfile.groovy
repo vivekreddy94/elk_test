@@ -142,17 +142,16 @@ def data_loading_test(){
     try{
         int received_hits = sh(returnStdout: true, script: """
         kubectl exec elasticsearch-0 -n elk -- curl -X GET \"elasticsearch-service:9200/logstash_index/_search?pretty\" -H \'Content-Type: application/json\' -d\' \
-        { \
-          \"track_total_hits\": 10000000, \
-          \"query\": { \
-            \"term\": { \
-              \"kubernetes.labels.app\": \"random-log-app-${BUILD_NUMBER}\" \
-            } \
-          } \
+        {
+        \"track_total_hits\": 10000000,
+        \"query\": {
+            \"match\": {
+            \"kubernetes.labels.app\": \"random-log-app-${BUILD_NUMBER}\"
+            }
+        }
         }\' | jq \".hits.total.value\"
         """
         )
-        println(received_hits)
         if (received_hits >= 100000){
             echo "Recieved hits are matching loaded hits"
         }
@@ -197,7 +196,12 @@ node('jenkins-slave') {
                 )
             }
         }
-
+        stage('Perform ansible linting') {
+            echo "Building a image and performing ansible linting"
+            sh "docker build -t vivekreddy94/ansible_lint:${BUILD_NUMBER} -f Dockerfile_lint ."
+            sh "docker run --rm vivekreddy94/ansible_lint:${BUILD_NUMBER} elk_stack.yml"
+            sh "docker rmi -f vivekreddy94/ansible_lint:${BUILD_NUMBER}"
+        }
         stage("Validate kubernetes code"){
             sh( script: """
                 echo "#### Perform kubeval to check validity####"

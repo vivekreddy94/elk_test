@@ -1,7 +1,7 @@
 - hosts: localhost
   connection: local
   tasks:
-    - name: create temporary directories for each component
+    - name: Delete temporary directories for each component if exists
       file:
         path: "/tmp/{{ item }}"
         state: absent
@@ -14,6 +14,7 @@
       file:
         path: "/tmp/{{ item }}"
         state: directory
+        mode: 0666
       with_items:
         - elasticsearch
         - logstash
@@ -23,7 +24,7 @@
     - name: copy elasticsearch files
       template:
         src: "roles/elasticsearch/templates/{{ item }}.j2"
-        dest: "/tmp/elasticsearch/{{item}}"
+        dest: "/tmp/elasticsearch/{{ item }}"
         mode: 0666
       with_items:
         - elasticsearch-role-binding.yml
@@ -34,12 +35,13 @@
       assemble:
         src: /tmp/elasticsearch
         dest: /tmp/elasticsearch/final-elastic.yml
+        mode: 0666
         delimiter: '---'
-    
+
     - name: copy logstash files
       template:
         src: "roles/logstash/templates/{{ item }}.j2"
-        dest: "/tmp/logstash/{{item}}"
+        dest: "/tmp/logstash/{{ item }}"
         mode: 0666
       with_items:
         - logstash-config-map.yml
@@ -50,12 +52,13 @@
       assemble:
         src: /tmp/logstash
         dest: /tmp/logstash/final-logstash.yml
+        mode: 0666
         delimiter: '---'
 
     - name: Copy filebeat files
       template:
         src: "roles/filebeat/templates/{{ item }}.j2"
-        dest: "/tmp/filebeat/{{item}}"
+        dest: "/tmp/filebeat/{{ item }}"
         mode: 0666
       with_items:
         - filebeat-config-map.yml
@@ -66,12 +69,13 @@
       assemble:
         src: /tmp/filebeat
         dest: /tmp/filebeat/final-filebeat.yml
+        mode: 0666
         delimiter: '---'
 
     - name: Copy Kibana files
       template:
         src: "roles/kibana/templates/{{ item }}.j2"
-        dest: "/tmp/kibana/{{item}}"
+        dest: "/tmp/kibana/{{ item }}"
         mode: 0666
       with_items:
         - kibana-config-map.yml
@@ -82,4 +86,6 @@
       assemble:
         src: /tmp/kibana
         dest: /tmp/kibana/final-kibana.yml
+        mode: 0666
         delimiter: '---'
+
