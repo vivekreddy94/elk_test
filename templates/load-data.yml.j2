@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: loadtesting
+  labels:
+    app: random-log-app-{{ build_number }}
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: random-log-app-{{ build_number }}
+  template:
+    metadata:
+      labels:
+        app: random-log-app-{{ build_number }}
+    spec:
+      containers:
+      - name: loadtesting
+        image: chentex/random-logger:latest
+        args: [ "0", "1", "20000" ]

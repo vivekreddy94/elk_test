@@ -1,0 +1,12 @@
+---
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: 'Loading data into elasticsearch'
+      k8s:
+        state: "{{ install_action }}"
+        definition: "{{ lookup('template','templates/load-data.yml.j2') }}"
+        namespace: default
+        kubeconfig: "{{ kubeconfig_path }}"
+
+    - name: 'Copy query script'

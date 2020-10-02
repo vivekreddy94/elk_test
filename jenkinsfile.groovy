@@ -1,9 +1,8 @@
 def print_debug_output(service){
     sh(script: """
-           echo "#####Printing logs for debugging#####"
+           echo "#####Printing logs of ${service} for debugging#####"
            kubectl describe pods -n elk -l app=${service}
            kubectl logs -n elk -l app=${service}
-           exit 1
            """
         )
 }
@@ -29,6 +28,7 @@ def pod_readiness(service){
         }
         catch(Exception e){
             print_debug_output(service)
+            throw e
         }
     }
 }
@@ -55,6 +55,7 @@ def statefulset_status(service,total_pods) {
         }
         catch(Exception e){
             print_debug_output(service)
+            throw e
         }
     }
 }
@@ -82,22 +83,35 @@ def elasticsearch_testing(){
     }
     catch(Exception e){
         print_debug_output("elasticsearch")
+        throw e
     }
 }
 
 def logstash_testing(){
     pod_readiness("logstash")
     pod_name = get_pod_name("logstash")
-    try{
-        sh (script: """
-            echo "#### Testing logstash api #####"
-            kubectl exec ${pod_name} -n elk -- curl http://localhost:9600/
-            """
-        )
-    }
-    catch(Exception e){
-        print_debug_output("elasticsearch")
-    }
+        try{
+            sh( script: """
+                echo "#### Testing logstash with test data ####"
+                echo "#### Below is the test data #####"
+                cat test_data/logstash/logstash_test_data
+                kubectl exec ${pod_name} -n elk -- rm /tmp/output.log
+                kubectl cp test_data/logstash/logstash_test_data ${pod_name}:/tmp/logstash_test_data -n elk
+                kubectl exec ${pod_name} -n elk -- curl -H \"content-type: application/json\" -XPUT \'http://127.0.0.1:8080/twitter/tweet/1\' -d \"@/tmp/logstash_test_data\"
+                kubectl exec ${pod_name} -n elk -- cat /tmp/output.log | tee /tmp/logstash_output
+                """
+            )
+            String fileContents = new File('/tmp/logstash_output').text
+            if (fileContents.length>0){
+                println("logs are ingested to output file")
+            }
+            else{
+                throw e
+            }
+        }
+        catch(Exception e){
+            print_debug_output("logstash")
+        }
 }
 
 def kibana_testing(){
@@ -112,6 +126,7 @@ def kibana_testing(){
     }
     catch(Exception e){
         print_debug_output("kibana")
+        throw e
     }
 }
 
@@ -127,14 +142,44 @@ def filebeat_testing(){
     }
     catch(Exception e){
         print_debug_output("filebeat")
+        throw e
     }
 }
+
+def data_loading_test(){
+    try{
+        int received_hits = sh(returnStdout: true, script: """
+        kubectl exec elasticsearch-0 -n elk -- curl -X GET \"elasticsearch-service:9200/logstash_index/_search?pretty\" -H \'Content-Type: application/json\' -d\' \
+        { \
+          "track_total_hits": 10000000, \
+          "query": { \
+            "term": { \
+              "kubernetes.labels.app": "random-log-app-${BUILD_NUMBER}" \
+            } \
+          } \
+        }\' | jq \".hits.total.value\"
+        """
+        )
+        println(received_hits)
+        if (received_hits >= 100000){
+            echo "Recieved hits are matching loaded hits"
+        }
+        else {
+            throw e
+        }
+    }
+    catch(Exception e){
+        echo "Not able to retrieve the expected hits"
+        throw e
+    }    
+}
+
 node('jenkins-slave') {
     try {
-        stage('Preparation') {
+        stage('Checkout source code') {
             git 'https://github.com/vivekreddy94/elk_test.git'
         }
-        stage("Test node") {
+        stage("Test slave setup") {
             sh(script: """
             echo "####check if docker is installed###"
             docker version
@@ -144,10 +189,12 @@ node('jenkins-slave') {
             which polaris
             echo "#####Check if kubeval is installed####"
             which kubeval
+            echo "##### Check if ansible is installed ###"
+            which ansible-playbook
             """
             )
         }
-        stage("Setup node") {
+        stage("Setup requirements") {
             withCredentials([file(credentialsId: 'kubeconfig', variable: 'configfile')]) {
                 sh(script: """
                 echo "####Setup kubeconfig file####"
@@ -164,7 +211,6 @@ node('jenkins-slave') {
                 echo "#### Perform kubeval to check validity####"
                 kubeval /tmp/*/final*.yml
                 echo "#### Perform polaris scan to check any missing setting #####"
-                ls -l
                 polaris audit --config kube-code-analysis/config_elastisearch.yml --audit-path /tmp/elasticsearch/final-elastic.yml --set-exit-code-below-score 100
                 polaris audit --config kube-code-analysis/config_kibana.yml --audit-path  /tmp/kibana/final-kibana.yml --set-exit-code-below-score 100
                 polaris audit --config kube-code-analysis/config_filebeat.yml --audit-path /tmp/filebeat/final-filebeat.yml --set-exit-code-below-score 100
@@ -195,15 +241,25 @@ node('jenkins-slave') {
             kibana_testing()
         }
         stage('Load data and test') {
-            sh "kubectl run loggenerator-1 -n default --restart=Never --image chentex/random-logger:latest 0 1 10000"
-            sh "kubectl run loggenerator-2 -n default --restart=Never --image chentex/random-logger:latest 0 1 10000"
-            sleep(120)
-            sh "kubectl delete pods --field-selector=status.phase==Succeeded -n default"
-            echo "##### Testing all components after loading some data #####"
-            elasticsearch_testing()
-            logstash_testing()
-            filebeat_testing()
-            kibana_testing()
+            try{
+                sh "ansible-playbook data_loading_pods.yml --extra-vars \"build_number=${BUILD_NUMBER} install_action=present\" -i inventories/stage/"
+                sleep(180)
+                echo "##### Testing all components after loading data #####"
+                elasticsearch_testing()
+                logstash_testing()
+                filebeat_testing()
+                kibana_testing()
+                data_loading_test()
+            }
+            catch (e){
+                echo "Testing failed after loading data"
+                throw e
+            }
+            finally{
+                echo "#### cleaning up data loading apps ####"
+                sh "ansible-playbook data_loading_pods.yml --extra-vars \"build_number=${BUILD_NUMBER} install_action=absent\" -i inventories/stage/"
+            }
+
         }
     /*
         stage('cleanup stage') {
@@ -222,5 +278,4 @@ node('jenkins-slave') {
         sh 'rm -rf ~/.kube/config'
     }
 }
-
 
