@@ -98,10 +98,9 @@ def logstash_testing(){
                 kubectl exec ${pod_name} -n elk -- rm -f /tmp/output.log
                 kubectl cp test_data/logstash/logstash_test_data ${pod_name}:/tmp/logstash_test_data -n elk
                 kubectl exec ${pod_name} -n elk -- curl -H \"content-type: application/json\" -XPUT \'http://127.0.0.1:8080/twitter/tweet/1\' -d \"@/tmp/logstash_test_data\"
-                kubectl exec ${pod_name} -n elk -- cat /tmp/output.log | tee /tmp/logstash_output
                 """
             )
-            String fileContents = new File('/tmp/logstash_output').text
+            filecontent = sh(returnStdout: true, script:"kubectl exec ${pod_name} -n elk -- cat /tmp/output.log").trim()
             if (fileContents.length>0){
                 println("logs are ingested to output file")
             }
