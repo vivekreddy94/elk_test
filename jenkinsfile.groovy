@@ -95,7 +95,7 @@ def logstash_testing(){
                 echo "#### Testing logstash with test data ####"
                 echo "#### Below is the test data #####"
                 cat test_data/logstash/logstash_test_data
-                kubectl exec ${pod_name} -n elk -- rm /tmp/output.log
+                kubectl exec ${pod_name} -n elk -- rm -f /tmp/output.log
                 kubectl cp test_data/logstash/logstash_test_data ${pod_name}:/tmp/logstash_test_data -n elk
                 kubectl exec ${pod_name} -n elk -- curl -H \"content-type: application/json\" -XPUT \'http://127.0.0.1:8080/twitter/tweet/1\' -d \"@/tmp/logstash_test_data\"
                 kubectl exec ${pod_name} -n elk -- cat /tmp/output.log | tee /tmp/logstash_output
