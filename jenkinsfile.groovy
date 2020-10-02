@@ -100,7 +100,7 @@ def logstash_testing(){
                 kubectl exec ${pod_name} -n elk -- curl -H \"content-type: application/json\" -XPUT \'http://127.0.0.1:8080/twitter/tweet/1\' -d \"@/tmp/logstash_test_data\"
                 """
             )
-            filecontent = sh(returnStdout: true, script:"kubectl exec ${pod_name} -n elk -- cat /tmp/output.log").trim()
+            fileContent = sh(returnStdout: true, script:"kubectl exec ${pod_name} -n elk -- cat /tmp/output.log").trim()
             if (fileContent.length>0){
                 println("logs are ingested to output file")
             }
