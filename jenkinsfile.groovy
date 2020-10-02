@@ -67,8 +67,6 @@ def get_pod_name(service){
 
 def elasticsearch_testing(){
     statefulset_status("elasticsearch","3")
-    sh "kubectl cp test_data/elasticsearch/elastic_test_data elasticsearch-0:/tmp/elastic_test_data -n elk"
-    sh 'kubectl exec elasticsearch-0 -n elk -- curl -s -H \"Content-Type: application/x-ndjson\" -XPOST localhost:9200/_bulk --data-binary \"@/tmp/elastic_test_data\"; echo > /tmp/output_data'
     try{
         sh( script: """
             echo "#### Testing elastic search data ####"
@@ -100,9 +98,8 @@ def logstash_testing(){
                 kubectl exec ${pod_name} -n elk -- curl -H \"content-type: application/json\" -XPUT \'http://127.0.0.1:8080/twitter/tweet/1\' -d \"@/tmp/logstash_test_data\"
                 """
             )
+            sh "kubectl exec ${pod_name} -n elk -- cat /tmp/output.log"
             fileContent = sh(returnStdout: true, script:"kubectl exec ${pod_name} -n elk -- cat /tmp/output.log").trim()
-            println(fileContent)
-            println(fileContent.length())
             if (fileContent.length>0){
                 println("logs are ingested to output file")
             }
