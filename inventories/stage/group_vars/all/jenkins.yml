@@ -8,7 +8,7 @@ docker_login_password: !vault |
           3264
 
 jenkins_docker_image_name: "{{ docker_login_username }}/jenkins-custom"
-jenkins_docker_image_tag: 1.0
+jenkins_docker_image_tag: test
 jenkins_persistent_home: "/var/jenkins_home"
 jenkins_namespace: "jenkins"
 

@@ -9,7 +9,5 @@ data:
   logstash.yml: |
     http.host: "0.0.0.0"
     path.config: /usr/share/logstash/pipeline
-{% if logstash.environment == "stage" %}
   logstash.conf: |-
     {{ lookup('template', 'logstash.conf.j2') | indent(4) }}
-{% endif %}
