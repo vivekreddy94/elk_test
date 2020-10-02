@@ -17,10 +17,10 @@
     - supervisord.conf
   tags: image
 
-  #- name: Log into DockerHub
-  #  docker_login:
-  #    username: "{{ docker_login_username }}"
-  #    password: "{{ docker_login_password }}"
+- name: Log into DockerHub
+  docker_login:
+    username: "{{ docker_login_username }}"
+    password: "{{ docker_login_password }}"
 
 - name: Build task image and Pushed to local registry
   docker_image:
@@ -50,7 +50,4 @@
     state: "{{ action }}"
     namespace: "{{ jenkins_namespace }}"
     definition: "{{ lookup('template', '../templates/jenkins-deployment.yaml') }}"
-    #    validate:
-    #  fail_on_error: yes
-    # strict: yes
     kubeconfig: "{{ kubeconfig_path }}"
