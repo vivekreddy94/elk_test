@@ -15,8 +15,9 @@ elasticsearch:
   storage_class: elasticsearch-storage-prod
   storage_size: 2Gi
   storage_claim: 2Gi
+  base_mnt_dir: /mnt/prod/elastic
 
 elasticsearch_pv:
-  - { name: 'elastic-prod-pv0', path: '/mnt/prod/elastic/pv0' }
-  - { name: 'elastic-prod-pv1', path: '/mnt/prod/elastic/pv1' }
-  - { name: 'elastic-prod-pv2', path: '/mnt/prod/elastic/pv2' }
+  - { name: 'elastic-prod-pv0', path: '{{ elasticsearch.base_mnt_dir }}/pv0' }
+  - { name: 'elastic-prod-pv1', path: '{{ elasticsearch.base_mnt_dir }}/pv1' }
+  - { name: 'elastic-prod-pv2', path: '{{ elasticsearch.base_mnt_dir }}/pv2' }

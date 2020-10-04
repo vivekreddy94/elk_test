@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ elasticsearch.app }}-{{ name }}
+  namespace: {{ namespace }}
+spec:
+  restartPolicy: Never
+  containers:
+  - name: {{ elasticsearch.app }}-{{ name }}
+    image: alpine
+    command: ["rm","-rf","{{ mount_path }}"]
+    securityContext:
+      privileged: true
+    volumeMounts:
+    - name: mountingdir
+      mountPath: {{ elasticsearch.base_mnt_dir }}
+  volumes:
+  - name: mountingdir
+    hostPath:
+      path: {{ elasticsearch.base_mnt_dir }}

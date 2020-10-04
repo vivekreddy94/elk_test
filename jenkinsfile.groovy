@@ -46,7 +46,6 @@ def statefulset_status(service,total_pods) {
                 }
                 else{
                     counter = counter + 1
-                    sleep(30)
                 }
             }
             else{
@@ -163,7 +162,7 @@ def data_loading_test(){
     catch(Exception e){
         echo "Not able to retrieve the expected hits"
         throw e
-    }    
+    }
 }
 
 node('jenkins-slave') {
@@ -199,9 +198,17 @@ node('jenkins-slave') {
         }
         stage('Perform ansible linting') {
             echo "Building a image and performing ansible linting"
-            sh "docker build -t vivekreddy94/ansible_lint:${BUILD_NUMBER} -f Dockerfile_lint ."
-            sh "docker run --rm vivekreddy94/ansible_lint:${BUILD_NUMBER} elk_stack.yml"
-            sh "docker rmi -f vivekreddy94/ansible_lint:${BUILD_NUMBER}"
+            try{
+                sh "docker build -t vivekreddy94/ansible_lint:${BUILD_NUMBER} -f Dockerfile_lint ."
+                sh "docker run --rm vivekreddy94/ansible_lint:${BUILD_NUMBER} elk_stack.yml"
+            }
+            catch(e){
+                echo "Problem in performing ansible linting"
+                throw e
+            }
+            finally{
+                sh "docker rmi -f vivekreddy94/ansible_lint:${BUILD_NUMBER}"
+            }
         }
         stage("Validate kubernetes code"){
             sh( script: """
@@ -237,7 +244,7 @@ node('jenkins-slave') {
             sleep(30)
             kibana_testing()
         }
-        stage('Load data and test') {
+        stage('Load data, test and cleanup') {
             try{
                 sh "ansible-playbook data_loading_pods.yml --extra-vars \"build_number=${BUILD_NUMBER} install_action=present\" -i inventories/stage/"
                 sleep(180)
@@ -255,23 +262,20 @@ node('jenkins-slave') {
             finally{
                 echo "#### cleaning up data loading apps ####"
                 sh "ansible-playbook data_loading_pods.yml --extra-vars \"build_number=${BUILD_NUMBER} install_action=absent\" -i inventories/stage/"
+                sh "ansible-playbook elk_stack.yml -i inventories/stage --extra-vars \"install_action=absent\""
             }
 
         }
-    /*
-        stage('cleanup stage') {
-            sh "ansible-playbook kibana.yml -i inventories/stage --extra-vars \"install_action=absent\""
-            sh "ansible-playbook logstash.yml -i inventories/stage --extra-vars \"install_action=absent\""
-            sh "ansible-playbook filebeat.yml -i inventories/stage --extra-vars \"install_action=absent\""
-        }
         stage("Deploy to prod") {
+            sh "ansible-playbook config-reloader.yml -i inventories/stage"
             sh "ansible-playbook elk_stack.yml -i inventories/production"
-        } */
+        }
     }
     catch (e) {
         throw e
     }
     finally {
+        sh "ansible-playbook elk_stack.yml -i inventories/stage --extra-vars \"install_action=absent\""
         sh 'rm -rf ~/.kube/config'
     }
 }

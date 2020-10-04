@@ -25,7 +25,7 @@
 
 - name: Create persistent volumes
   k8s:
-    state: present
+    state: "{{ install_action | default('present') }}"
     definition:
       apiVersion: v1
       kind: PersistentVolume
@@ -41,6 +41,7 @@
           - ReadWriteMany
         hostPath:
           path: "{{ item.path }}"
+    kubeconfig: "{{ kubeconfig_path }}"
   loop: "{{ elasticsearch_pv }}"
 
 - name: Create cluster role binding
@@ -66,3 +67,29 @@
     state: "{{ install_action | default('present') }}"
     definition: "{{ lookup('template', 'elasticsearch-svc.yml.j2') }}"
     kubeconfig: "{{ kubeconfig_path }}"
+
+- name: Delete PVC
+  command: "microk8s.kubectl delete pvc -n {{ namespace }} --all"
+  when: install_action == "absent"
+
+- name: Create pods for deleting  mounted volumes 
+  k8s:
+    state: present
+    definition: "{{ lookup('template', 'elasticsearch-delete-volume-mounts.yml.j2') }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+  vars:
+    mount_path: "{{ item.path }}"
+    name: "{{ item.name }}"
+  loop: "{{ elasticsearch_pv }}"
+  when: install_action == "absent"
+
+- name: Delete pods created for deleting mounted volumes
+  k8s:
+    state: absent
+    definition: "{{ lookup('template', 'elasticsearch-delete-volume-mounts.yml.j2') }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+  vars:
+    mount_path: "{{ item.path }}"
+    name: "{{ item.name }}"
+  loop: "{{ elasticsearch_pv }}"
+  when: install_action == "absent"
