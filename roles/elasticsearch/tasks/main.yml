@@ -69,10 +69,10 @@
     kubeconfig: "{{ kubeconfig_path }}"
 
 - name: Delete PVC
-  command: "microk8s.kubectl delete pvc -n {{ namespace }} --all"
+  command: "kubectl delete pvc -n {{ namespace }} --all"
   when: install_action == "absent"
 
-- name: Create pods for deleting  mounted volumes 
+- name: Create pods for deleting  mounted volumes
   k8s:
     state: present
     definition: "{{ lookup('template', 'elasticsearch-delete-volume-mounts.yml.j2') }}"
