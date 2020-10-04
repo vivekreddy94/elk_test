@@ -73,6 +73,11 @@ def elasticsearch_testing(){
             cat test_data/elasticsearch/elastic_test_data
             kubectl cp test_data/elasticsearch/elastic_test_data elasticsearch-0:/tmp/elastic_test_data -n elk
             kubectl exec elasticsearch-0 -n elk -- curl -s -H \"Content-Type: application/x-ndjson\" -XPOST localhost:9200/_bulk --data-binary \"@/tmp/elastic_test_data\"; echo
+            """
+        )
+        sleep(60)
+        sh( script: """
+            echo "Query output data"
             kubectl exec elasticsearch-0 -n elk -- curl -s -X GET \"localhost:9200/loading_data/_search?pretty\" | jq \".hits.hits\" | tee /tmp/elastic_output
             diff test_data/elasticsearch/elastic_test_output /tmp/elastic_output
             """

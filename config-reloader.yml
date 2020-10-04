@@ -1,5 +1,6 @@
 ---
-- hosts: kubernetes-node
+- hosts: localhost
+  connection: local
   tasks:
     - name: Apply reloader of daemon/deploy/stateful etc on config and secret change
       k8s:
