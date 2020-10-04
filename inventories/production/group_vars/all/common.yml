@@ -1,3 +1,4 @@
 namespace: elkstack
 kubeconfig_path: ~/.kube/config
 inventory: production
+install_action: present
